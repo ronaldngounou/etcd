@@ -77,3 +77,10 @@ type WatchOptions struct {
 	Revision int64
 	RangeEnd string
 }
+
+type MakeMirrorOptions struct {
+	Prefix       bool
+	Rev          int64
+	DestPrefix   bool
+	NoDestPrefix bool
+}

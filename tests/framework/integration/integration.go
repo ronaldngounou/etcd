@@ -475,3 +475,8 @@ func (c integrationClient) MemberList(ctx context.Context, serializable bool) (*
 	}
 	return c.Client.MemberList(ctx)
 }
+
+func (c integrationClient) MakeMirror(ctx context.Context, destEndpoints []string, otps config.MakeMirrorOptions) error {
+	// implement interface
+	var opOpts []clientv3.
+}

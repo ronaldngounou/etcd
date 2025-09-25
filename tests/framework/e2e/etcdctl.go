@@ -745,3 +745,33 @@ func (ctl *EtcdctlV3) Watch(ctx context.Context, key string, opts config.WatchOp
 
 	return ch
 }
+
+func (ctl *EtcdctlV3) MakeMirror(ctx context.Context, destEndpoints []string, opts config.MakeMirrorOptions) error {
+
+	args := ctl.cmdArgs()
+	args = append(args, "make-mirror")
+
+	if opts.Prefix {
+		args = append(args, "--prefix")
+	}
+	if opts.Rev != 0 {
+		args = append(args, "--rev")
+	}
+	if opts.DestPrefix {
+		args = append(args, "--no-dest-prefix")
+	}
+	if opts.DestPrefix {
+		args = append(args, "--dest-prefix")
+	}
+
+	proc, err := SpawnCmd(args, nil)
+
+	if err != nil {
+		return err
+	}
+
+	defer proc.Stop()
+
+	return nil
+
+}
