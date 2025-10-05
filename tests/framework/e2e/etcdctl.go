@@ -745,3 +745,53 @@ func (ctl *EtcdctlV3) Watch(ctx context.Context, key string, opts config.WatchOp
 
 	return ch
 }
+
+func (ctl *EtcdctlV3) MakeMirror(ctx context.Context, destEndpoints []string, opts config.MakeMirrorOptions) error {
+	if len(destEndpoints) != 1 {
+		return fmt.Errorf("make-mirror takes one destination argument")
+	}
+
+	args := ctl.cmdArgs()
+	args = append(args, "make-mirror")
+
+	if opts.Prefix != "" {
+		args = append(args, "--prefix")
+	}
+	if opts.Rev != 0 {
+		args = append(args, "--rev")
+	}
+	if opts.DestPrefix != "" {
+		args = append(args, "--no-dest-prefix")
+	}
+	if opts.DestPrefix != "" {
+		args = append(args, "--dest-prefix")
+	}
+
+	if opts.DestCACert != "" {
+		args = append(args, "--dest-cacert")
+	}
+
+	if opts.DestCert != "" {
+		args = append(args, "--dest-cert")
+	}
+
+	if opts.DestKey != "" {
+		args = append(args, "--dest-key")
+	}
+
+	if opts.DestInsecureTransport {
+		args = append(args, "--dest-insecure-transport")
+	}
+
+	args = append(args, destEndpoints[0])
+	proc, err := SpawnCmd(args, nil)
+
+	if err != nil {
+		return err
+	}
+
+	defer proc.Stop()
+
+	return nil
+
+}
