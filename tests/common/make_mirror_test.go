@@ -46,6 +46,45 @@ func TestMakeMirrorModifyDestPrefix(t *testing.T) {
 	}
 }
 
+func testMirror(t *testing.T, srcTC, destTC testCase, mmOpts config.MakeMirrorOptions, sourcekvs, destkvs []testutils.KV, srcprefix, desprefix string) {
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+	defer cancel()
+	// Source cluster
+	src := testRunner.NewCluster(ctx, t, config.WithClusterConfig(srcTC.config))
+	defer src.Close()
+	srcClient := testutils.MustClient(src.Client())
+
+	// Destination cluster
+	//different value to avoid collisions
+	// destcfg := destTC.config
+	// e2ectx := e2e.ensureE2EClusterContext(&destcfg)
+	// e2ectx.BasePort = 10001
+	// destcfg.BasePort := 10001
+	dest := testRunner.NewCluster(ctx, t, config.WithClusterConfig(destTC.config))
+	defer dest.Close()
+	destClient := testutils.MustClient(dest.Client())
+
+	// Start make mirror
+	go func() {
+		_ <- srcClient.MakeMirror(ctx, dest.Endpoints(), mmOpts)
+	}()
+
+	// Write to source
+	for i := range sourcekvs {
+		require.NoError(t, srcClient.Put(ctx, sourcekvs[i].Key, sourcekvs[i].Val, config.PutOptions{}))
+	}
+
+	// Source assertion
+	_, err := srcClient.Get(ctx, srcprefix, config.GetOptions{Prefix: true})
+	require.NoError(t, err)
+
+	// Destination assertion
+	err := destClient.Watch(ctx, destprefix, config.WatchOptions{Prefix: true, Revision: 1})
+
+}
+
 func TestCtlV3MakeMirror(t *testing.T)                 { testCtl(t, makeMirrorTest) }
 func TestCtlV3MakeMirrorModifyDestPrefix(t *testing.T) { testCtl(t, makeMirrorModifyDestPrefixTest) }
 func TestCtlV3MakeMirrorNoDestPrefix(t *testing.T)     { testCtl(t, makeMirrorNoDestPrefixTest) }
