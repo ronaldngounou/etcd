@@ -760,29 +760,25 @@ func (ctl *EtcdctlV3) MakeMirror(ctx context.Context, destEndpoints []string, op
 	if opts.Rev != 0 {
 		args = append(args, "--rev")
 	}
-	if opts.DestPrefix != "" {
+	if opts.NoDestPrefix {
 		args = append(args, "--no-dest-prefix")
 	}
 	if opts.DestPrefix != "" {
 		args = append(args, "--dest-prefix")
 	}
-
 	if opts.DestCACert != "" {
 		args = append(args, "--dest-cacert")
 	}
-
 	if opts.DestCert != "" {
 		args = append(args, "--dest-cert")
 	}
-
 	if opts.DestKey != "" {
 		args = append(args, "--dest-key")
 	}
-
 	if opts.DestInsecureTransport {
 		args = append(args, "--dest-insecure-transport")
 	}
-
+	
 	args = append(args, destEndpoints[0])
 	proc, err := SpawnCmd(args, nil)
 

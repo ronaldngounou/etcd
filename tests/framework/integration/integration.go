@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"go.uber.org/zap"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
@@ -476,7 +477,47 @@ func (c integrationClient) MemberList(ctx context.Context, serializable bool) (*
 	return c.Client.MemberList(ctx)
 }
 
-func (c integrationClient) MakeMirror(ctx context.Context, destEndpoints []string, otps config.MakeMirrorOptions) error {
-	// implement interface
-	var opOpts []clientv3.
+func (c integrationClient) MakeMirror(ctx context.Context, destEndpoints []string, opts config.MakeMirrorOptions) error {
+
+	var mmOpts []clientv3.OpOption
+
+	// Create destination clien (gRPC connection)
+	destClient, err := clientv3.New(clientv3.Config{
+		Endpoints:   destEndpoints,
+		DialTimeout: 5 * time.Second,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create destination client: %w", err)
+	}
+	defer destClient.Close()
+
+	if len(destEndpoints) != 1 {
+		return fmt.Errorf("make-mirror takes one destination argument")
+	}
+	if opts.Prefix != "" {
+		mmOpts = append(mmOpts, clientv3.WithPrefix())
+	}
+	if opts.Rev != 0 {
+		mmOpts = append(mmOpts, clientv3.WithRev(opts.Rev))
+	}
+	if opts.DestPrefix != "" {
+		// to be implemented
+		mmOpts = append(mmOpts, clientv3.WithDestPrefix())
+	}
+	if opts.NoDestPrefix {
+		// to be implemented
+		mmOpts = append(mmOpts, clientv3.NoDestPrefix())
+	}
+	if opts.DestCACert != "" {
+		// to be implemented
+		mmOpts = append(mmOpts, clientv3.DestCACert())
+	}
+	if opts.DestKey != "" {
+		mmOpts = append(mmOpts, clientv3.DestKey())
+	}
+	if opts.DestInsecureTransport {
+		mmOpts = append(mmOpts, clientv3.DestInsecureTransport())
+	}
+
+	return c.Client.MakeMirror(ctx, destEndpoints, opts...)
 }
