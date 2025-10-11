@@ -43,6 +43,7 @@ type ClusterContext struct {
 	Version ClusterVersion
 	EnvVars map[string]string
 	UseUnix bool
+	BasePort int
 }
 
 var experimentalFlags = map[string]struct{}{
