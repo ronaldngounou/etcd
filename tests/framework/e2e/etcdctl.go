@@ -746,7 +746,7 @@ func (ctl *EtcdctlV3) Watch(ctx context.Context, key string, opts config.WatchOp
 	return ch
 }
 
-func (ctl *EtcdctlV3) MakeMirror(ctx context.Context, destEndpoints []string, opts config.MakeMirrorOptions) error {
+func (ctl *EtcdctlV3) MakeMirror(ctx context.Context, destEndpoints string, opts config.MakeMirrorOptions) error {
 	if len(destEndpoints) != 1 {
 		return fmt.Errorf("make-mirror takes one destination argument")
 	}
@@ -778,8 +778,8 @@ func (ctl *EtcdctlV3) MakeMirror(ctx context.Context, destEndpoints []string, op
 	if opts.DestInsecureTransport {
 		args = append(args, "--dest-insecure-transport")
 	}
-	
-	args = append(args, destEndpoints[0])
+
+	args = append(args, destEndpoints)
 	proc, err := SpawnCmd(args, nil)
 
 	if err != nil {
