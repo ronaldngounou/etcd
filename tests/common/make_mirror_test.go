@@ -115,20 +115,21 @@ func testMirror(t *testing.T, srcTC, destTC testCase, mmOpts config.MakeMirrorOp
 	srcClient := testutils.MustClient(src.Client())
 
 	// Destination cluster
-	//different value to avoid collisions
-	// destcfg := destTC.config
-	// e2ectx := e2e.ensureE2EClusterContext(&destcfg)
-	// e2ectx.BasePort = 10001
-	// destcfg.BasePort := 10001
-	dest := testRunner.NewCluster(ctx, t, config.WithClusterConfig(destTC.config))
+	basePort := 10000
+	dest := testRunner.NewCluster(ctx, t, config.WithClusterConfig(destTC.config), WithBasePort(basePort)) // destTC.BasePort
+
 	defer dest.Close()
 	destClient := testutils.MustClient(dest.Client())
 
 	// Start make mirror
+	errCh := make(chan error)
 	go func() {
-		_ <- srcClient.MakeMirror(ctx, dest.Endpoints(), mmOpts)
+		errCh <- srcClient.MakeMirror(ctx, dest.Endpoints(), mmOpts)
 	}()
-
+	defer func() {
+		cancel()
+		require.NoError(t, <-errCh)
+	}()
 	// Write to source
 	for i := range sourcekvs {
 		require.NoError(t, srcClient.Put(ctx, sourcekvs[i].Key, sourcekvs[i].Val, config.PutOptions{}))
@@ -139,6 +140,17 @@ func testMirror(t *testing.T, srcTC, destTC testCase, mmOpts config.MakeMirrorOp
 	require.NoError(t, err)
 
 	// Destination assertion
-	watchChan := destClient.Watch(ctx, destprefix, config.WatchOptions{Prefix: true, Revision: 1})
+	wCtx, wCancel := context.WithCancel(ctx)
+	defer wCancel()
+
+	watchChan := destClient.Watch(wCtx, destprefix, config.WatchOptions{Prefix: true, Revision: 1})
+
+	// Compare the result of what we obtained using the make-mirror command versus what we had using
+	// the Watch command
+	watchTimeout := 1 * time.Second
+	kvs, err := testutils.KeyValuesFromWatchChan(watchChan, len(destkvs), watchTimeout)
+
+	require.NoError(t, err)
+	require.Equal(t, destkvs, kvs)
 
 }
