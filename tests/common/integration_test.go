@@ -76,6 +76,10 @@ func WithTCPClient() config.ClusterOption {
 	}
 }
 
+func WithBasePort(port int) config.ClusterOption {
+	return func(c *config.ClusterConfig) {}
+}
+
 func ensureIntegrationClusterContext(c *config.ClusterConfig) *integration.ClusterContext {
 	ctx, _ := c.ClusterContext.(*integration.ClusterContext)
 	if ctx == nil {

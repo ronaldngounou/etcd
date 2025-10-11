@@ -16,6 +16,7 @@ package integration
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -500,24 +501,24 @@ func (c integrationClient) MakeMirror(ctx context.Context, destEndpoints []strin
 	if opts.Rev != 0 {
 		mmOpts = append(mmOpts, clientv3.WithRev(opts.Rev))
 	}
-	if opts.DestPrefix != "" {
-		// to be implemented
-		mmOpts = append(mmOpts, clientv3.WithDestPrefix())
-	}
-	if opts.NoDestPrefix {
-		// to be implemented
-		mmOpts = append(mmOpts, clientv3.NoDestPrefix())
-	}
-	if opts.DestCACert != "" {
-		// to be implemented
-		mmOpts = append(mmOpts, clientv3.DestCACert())
-	}
-	if opts.DestKey != "" {
-		mmOpts = append(mmOpts, clientv3.DestKey())
-	}
-	if opts.DestInsecureTransport {
-		mmOpts = append(mmOpts, clientv3.DestInsecureTransport())
-	}
+	// if opts.DestPrefix != "" {
+	// 	// to be implemented
+	// 	mmOpts = append(mmOpts, clientv3.WithDestPrefix())
+	// }
+	// if opts.NoDestPrefix {
+	// 	// to be implemented
+	// 	mmOpts = append(mmOpts, clientv3.NoDestPrefix())
+	// }
+	// if opts.DestCACert != "" {
+	// 	// to be implemented
+	// 	mmOpts = append(mmOpts, clientv3.DestCACert())
+	// }
+	// if opts.DestKey != "" {
+	// 	mmOpts = append(mmOpts, clientv3.DestKey())
+	// }
+	// if opts.DestInsecureTransport {
+	// 	mmOpts = append(mmOpts, clientv3.DestInsecureTransport())
+	// }
 
-	return c.Client.MakeMirror(ctx, destEndpoints, opts...)
+	return errors.New("error")
 }
