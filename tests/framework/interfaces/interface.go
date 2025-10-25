@@ -85,7 +85,7 @@ type Client interface {
 
 	Watch(ctx context.Context, key string, opts config.WatchOptions) clientv3.WatchChan
 
-	MakeMirror(ctx context.Context, destEndpoints []string, opts config.MakeMirrorOptions) error
+	MakeMirror(ctx context.Context, destEndpoint string, opts config.MakeMirrorOptions) error
 }
 
 type TemplateEndpoints interface {

@@ -746,48 +746,46 @@ func (ctl *EtcdctlV3) Watch(ctx context.Context, key string, opts config.WatchOp
 	return ch
 }
 
-func (ctl *EtcdctlV3) MakeMirror(ctx context.Context, destEndpoints []string, opts config.MakeMirrorOptions) error {
-	if len(destEndpoints) != 1 {
-		return fmt.Errorf("make-mirror takes one destination argument")
-	}
-
+func (ctl *EtcdctlV3) MakeMirror(ctx context.Context, destEndpoint string, opts config.MakeMirrorOptions) error {
 	args := ctl.cmdArgs()
 	args = append(args, "make-mirror")
-
 	if opts.Prefix != "" {
-		args = append(args, "--prefix")
+		args = append(args, "--prefix", opts.Prefix)
 	}
 	if opts.Rev != 0 {
-		args = append(args, "--rev")
+		args = append(args, "--rev", fmt.Sprint(opts.Rev))
+	}
+	if opts.DestPrefix != "" {
+		args = append(args, "--dest-prefix", opts.DestPrefix)
 	}
 	if opts.NoDestPrefix {
 		args = append(args, "--no-dest-prefix")
 	}
-	if opts.DestPrefix != "" {
-		args = append(args, "--dest-prefix")
-	}
-	if opts.DestCACert != "" {
-		args = append(args, "--dest-cacert")
-	}
+
 	if opts.DestCert != "" {
-		args = append(args, "--dest-cert")
+		args = append(args, "--dest-cert", opts.DestCert)
 	}
 	if opts.DestKey != "" {
-		args = append(args, "--dest-key")
+		args = append(args, "--dest-key", opts.DestKey)
 	}
-	if opts.DestInsecureTransport {
-		args = append(args, "--dest-insecure-transport")
+	if opts.DestCACert != "" {
+		args = append(args, "--dest-cacert", opts.DestCACert)
 	}
-	
-	args = append(args, destEndpoints[0])
-	proc, err := SpawnCmd(args, nil)
+	if !opts.DestInsecureTransport {
+		// Bool flags in cobra must be provided as --flag=false, not as separate args.
+		args = append(args, "--dest-insecure-transport=false")
+	}
+	args = append(args, destEndpoint)
 
+	proc, err := SpawnCmd(args, nil)
 	if err != nil {
 		return err
 	}
 
 	defer proc.Stop()
 
-	return nil
+	// Wait until context is cancelled or its timeout is reached so that the make-mirror command can keep running in the background.
+	<-ctx.Done()
 
+	return nil
 }

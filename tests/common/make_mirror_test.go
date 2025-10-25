@@ -30,6 +30,9 @@ func TestMakeMirrorModifyDestPrefix(t *testing.T) {
 	for _, srcTC := range clusterTestCases() {
 		for _, destTC := range clusterTestCases() {
 			t.Run(fmt.Sprintf("Source=%s/Destination=%s", srcTC.name, destTC.name), func(t *testing.T) {
+				if destTC.config.ClientTLS == config.AutoTLS {
+					t.Skip("Skipping: destination uses Client AutoTLS, but the test cannot expose the dest CA for etcdctl (--dest-cacert); TLS verification would fail")
+				}
 
 				var (
 					mmOpts     = config.MakeMirrorOptions{Prefix: "o_", DestPrefix: "d_"}
@@ -49,7 +52,6 @@ func TestMakeMirrorNoDestPrefix(t *testing.T) {
 	testRunner.BeforeTest(t)
 	for _, srcTC := range clusterTestCases() {
 		for _, destTC := range clusterTestCases() {
-
 			t.Run(fmt.Sprintf("Source=%s/Destination=%s", srcTC.name, destTC.name), func(t *testing.T) {
 				var (
 					mmOpts     = config.MakeMirrorOptions{Prefix: "o_", NoDestPrefix: true}
@@ -107,6 +109,12 @@ func TestMakeMirrorWithWatchRev(t *testing.T) {
 func testMirror(t *testing.T, srcTC, destTC testCase, mmOpts config.MakeMirrorOptions, sourcekvs, destkvs []testutils.KV, srcprefix, destprefix string) {
 	t.Helper()
 
+	if destTC.config.ClientTLS == config.AutoTLS {
+		// AutoTLS destination unsupported here: we cannot pass the destination CA to etcdctl (--dest-cacert),
+		// so TLS verification would fail.
+		t.Skip("Skipping: destination uses Client AutoTLS, but the test cannot expose the dest CA for etcdctl (--dest-cacert); TLS verification would fail")
+	}
+
 	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
 	defer cancel()
 	// Source cluster
@@ -115,18 +123,21 @@ func testMirror(t *testing.T, srcTC, destTC testCase, mmOpts config.MakeMirrorOp
 	srcClient := testutils.MustClient(src.Client())
 
 	// Destination cluster
-	basePort := 10000
-	dest := testRunner.NewCluster(ctx, t, config.WithClusterConfig(destTC.config), WithBasePort(basePort)) // destTC.BasePort
-
+	destCfg := destTC.config
+	dest := testRunner.NewCluster(ctx, t, config.WithClusterConfig(destTC.config), WithBasePort(10000)) // destTC.BasePort
 	defer dest.Close()
 	destClient := testutils.MustClient(dest.Client())
 
+	// Configure TLS for destination before starting make-mirror
+	configureMirrorDestTLS(&mmOpts, destCfg.ClientTLS)
+
 	// Start make mirror
 	errCh := make(chan error)
-	go func() {
-		errCh <- srcClient.MakeMirror(ctx, dest.Endpoints(), mmOpts)
-	}()
+	go func(opts config.MakeMirrorOptions) {
+		errCh <- srcClient.MakeMirror(ctx, dest.Endpoints()[0], opts)
+	}(mmOpts)
 	defer func() {
+		// Need to cancel the context to ensure the MakeMirror goroutine is cancelled before catching the error.
 		cancel()
 		require.NoError(t, <-errCh)
 	}()
@@ -136,8 +147,9 @@ func testMirror(t *testing.T, srcTC, destTC testCase, mmOpts config.MakeMirrorOp
 	}
 
 	// Source assertion
-	_, err := srcClient.Get(ctx, srcprefix, config.GetOptions{Prefix: true})
+	srcResp, err := srcClient.Get(ctx, srcprefix, config.GetOptions{Prefix: true})
 	require.NoError(t, err)
+	require.Equal(t, sourcekvs, testutils.KeyValuesFromGetResponse(srcResp))
 
 	// Destination assertion
 	wCtx, wCancel := context.WithCancel(ctx)
@@ -147,10 +159,7 @@ func testMirror(t *testing.T, srcTC, destTC testCase, mmOpts config.MakeMirrorOp
 
 	// Compare the result of what we obtained using the make-mirror command versus what we had using
 	// the Watch command
-	watchTimeout := 1 * time.Second
-	kvs, err := testutils.KeyValuesFromWatchChan(watchChan, len(destkvs), watchTimeout)
-
+	destResp, err := testutils.KeyValuesFromWatchChan(watchChan, len(destkvs), 10*time.Second)
 	require.NoError(t, err)
-	require.Equal(t, destkvs, kvs)
-
+	require.Equal(t, destkvs, destResp)
 }

@@ -142,3 +142,15 @@ func ensureE2EClusterContext(c *config.ClusterConfig) *e2e.ClusterContext {
 	}
 	return ctx
 }
+
+func configureMirrorDestTLS(mm *config.MakeMirrorOptions, tls config.TLSConfig) {
+	switch tls {
+	case config.ManualTLS:
+		mm.DestCert = e2e.CertPath
+		mm.DestKey = e2e.PrivateKeyPath
+		mm.DestCACert = e2e.CaPath
+		mm.DestInsecureTransport = false
+	default:
+		mm.DestInsecureTransport = true
+	}
+}

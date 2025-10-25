@@ -79,13 +79,12 @@ type WatchOptions struct {
 }
 
 type MakeMirrorOptions struct {
-	Prefix       string
-	Rev          int64
-	DestPrefix   string
-	NoDestPrefix bool
-	//TLS related options
-	DestCACert            string
+	Prefix                string
+	Rev                   int64
+	DestPrefix            string
+	NoDestPrefix          bool
 	DestCert              string
 	DestKey               string
+	DestCACert            string
 	DestInsecureTransport bool
 }

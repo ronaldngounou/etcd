@@ -83,3 +83,5 @@ func ensureIntegrationClusterContext(c *config.ClusterConfig) *integration.Clust
 	}
 	return ctx
 }
+
+func configureMirrorDestTLS(mm *config.MakeMirrorOptions, _ config.TLSConfig) {}

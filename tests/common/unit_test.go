@@ -60,3 +60,5 @@ func WithUnixClient() config.ClusterOption {
 func WithBasePort(port int) config.ClusterOption {
 	return func(c *config.ClusterConfig) {}
 }
+
+func configureMirrorDestTLS(mm *config.MakeMirrorOptions, _ config.TLSConfig) {}
