@@ -17,6 +17,8 @@
 package common
 
 import (
+	"time"
+
 	"go.etcd.io/etcd/tests/v3/framework"
 	"go.etcd.io/etcd/tests/v3/framework/config"
 )

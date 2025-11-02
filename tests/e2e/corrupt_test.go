@@ -407,7 +407,7 @@ func testCtlV3ReadAfterWrite(t *testing.T, ops ...clientv3.OpOption) {
 	})
 	require.NoError(t, err)
 	defer func() {
-		derr := cc.Close()
+		derr := cc.Clos e()
 		require.NoError(t, derr)
 	}()
 

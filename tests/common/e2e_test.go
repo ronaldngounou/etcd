@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"go.etcd.io/etcd/client/pkg/v3/fileutil"
 	"go.etcd.io/etcd/tests/v3/framework"
@@ -121,4 +122,12 @@ func WithUnixClient() config.ClusterOption {
 
 func WithTCPClient() config.ClusterOption {
 	return e2e.WithTCPClient()
+}
+
+func WithCorruptCheckTime(time time.Duration) config.ClusterOption {
+	return e2e.WithCorruptCheckTime(time)
+}
+
+func WithDataDir(bool) config.ClusterOption {
+	return e2e.WithDataDir(bool)
 }

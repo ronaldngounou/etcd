@@ -41,7 +41,8 @@ type ClusterConfig struct {
 	// ClusterConfig. The common test cases shouldn't care about what
 	// data is encoded or included; instead "e2e" or "integration"
 	// framework should decode or parse it separately.
-	ClusterContext any
+	ClusterContext   any
+	CorruptCheckTime time.Duration
 }
 
 func DefaultClusterConfig() ClusterConfig {
